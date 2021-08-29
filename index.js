@@ -1,8 +1,8 @@
 require('dotenv').config()
 
 const fetch = require('node-fetch');
-const { Connection, Request, TYPES } = require('tedious');
-
+const { Connection, TYPES } = require('tedious');
+const version = 'v1.0'
 const option = {
     method: 'get',
     headers: { 'Authorization': `Bearer ${process.env.LOYVERSE_TOKEN}` }
@@ -24,12 +24,12 @@ const config = {
 };
 
 const dateCheck = new Date()
-dateCheck.setHours(dateCheck.getHours() - 1)
+dateCheck.setDate(dateCheck.getDate() - 1)
 
 async function fetchCustomer () {
     try{
         const response = await fetch(
-            `https://api.loyverse.com/v1.0/customers?created_at_min=${dateCheck.toISOString()}`,
+            `https://api.loyverse.com/${version}/customers?created_at_min=${dateCheck.toISOString()}`,
             option
         )
         const data = await response.json()
@@ -43,8 +43,9 @@ async function fetchCustomer () {
             } else {
                 console.log('connect success')
                 // console.log(data)
-                if (data.customers.length) {
-                    loadBulkCustomer(connection, data)
+                const customerLength = data.customers.length
+                if (customerLength) {
+                    loadBulkCustomer(connection, data, customerLength)
                 } else {
                     connection.close();
                 }
@@ -59,7 +60,7 @@ async function fetchCustomer () {
 
 // Executing Bulk Load
 //--------------------------------------------------------------------------------
-function loadBulkCustomer(connection, data) {
+function loadBulkCustomer(connection, data, customerLength) {
     const option = { keepNulls: true }; // option to enable null values
     const bulkLoad = connection.newBulkLoad('bcl.customers', option, (err, rowCont) => {
         if (err) {
@@ -94,19 +95,13 @@ function loadBulkCustomer(connection, data) {
     bulkLoad.addColumn('deleted_at', TYPES.VarChar, { nullable: true });
 
     // add rows
-    // bulkLoad.addRow({ c1: 1 });
-    // bulkLoad.addRow({ c1: 2, c2: 'hello' });
-
-    data.customers.forEach(customer => {
-        if ('id' in customer) {
-            customer.loyverse_id = customer.id
-            delete customer.id
+    for (let i = 0;i < customerLength;i++) {
+        if ('id' in data.customers[i]) {
+            data.customers[i].loyverse_id = data.customers[i].id
+            delete data.customers[i].id
         }
-    })
-
-    data.customers.forEach(customer => {
-        bulkLoad.addRow(customer);
-    })
+        bulkLoad.addRow(data.customers[i]);
+    }
 
     // perform bulk insert
     connection.execBulkLoad(bulkLoad);
