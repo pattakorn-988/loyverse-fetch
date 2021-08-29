@@ -13,6 +13,7 @@
   "dependencies": {
     "dotenv": "^10.0.0",
     "node-fetch": "^2.6.1",
-    "tedious": "^12.0.0"
+    "tedious": "^12.0.0",
+    "winston": "^3.3.3"
   }
 }
