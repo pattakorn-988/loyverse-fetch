@@ -25,6 +25,7 @@ const config = {
 
 const dateCheck = new Date()
 dateCheck.setDate(dateCheck.getDate() - 1)
+dateCheck.setHours(0, 0, 0, 0)
 
 async function fetchCustomer () {
     try{
@@ -109,6 +110,7 @@ function loadBulkCustomer(connection, data, customerLength) {
 
 
 function main() {
+    console.log('fetching data from', dateCheck)
     fetchCustomer()
 }
 
