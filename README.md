@@ -6,7 +6,7 @@
     `$ git clone https://github.com/pattakorn-988/loyverse-fetch.git`
 2. Install script's dependencies.  
     `$ npm install`
-3. Duplicate `.env.sample` file into `.env` file.  
+3. Duplicate `.env.sample` file into `.env` file.
 4. Populate configurations inside `.env` file.
     ```
     LOYVERSE_TOKEN=<Your Loyverse instance token here.>
@@ -18,6 +18,6 @@
     SQL_ENCRYPT=true
     SQL_PORT=1433
     ```
-   
-5.Run the script.  
+
+5. Run the script.  
     `$ node index.js`
