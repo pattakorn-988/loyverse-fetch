@@ -58,6 +58,37 @@ async function fetchCustomer () {
         console.error(e)
     }
 }
+async function fetchStore () {
+    try{
+        const response = await fetch(
+            `https://api.loyverse.com/${version}/stores?created_at_min=${dateCheck.toISOString()}`,
+            option
+        )
+        const data = await response.json()
+
+        const connection = new Connection(config);
+
+        // Attempt to connect and execute queries if connection goes through
+        connection.on("connect", err => {
+            if (err) {
+                console.error(err.message);
+            } else {
+                console.log('connect success')
+                // console.log(data)
+                const storeLength = data.stores.length
+                if (storeLength) {
+                    loadBulkStore(connection, data, storeLength)
+                } else {
+                    connection.close();
+                }
+            }
+        });
+
+        connection.connect();
+    } catch (e) {
+        console.error(e)
+    }
+}
 
 // Executing Bulk Load
 //--------------------------------------------------------------------------------
@@ -68,7 +99,7 @@ function loadBulkCustomer(connection, data, customerLength) {
             throw err;
         }
 
-        console.log('rows inserted :', rowCont);
+        console.log('Customers inserted :', rowCont);
         console.log('DONE!');
         connection.close();
     });
@@ -107,11 +138,46 @@ function loadBulkCustomer(connection, data, customerLength) {
     // perform bulk insert
     connection.execBulkLoad(bulkLoad);
 }
+function loadBulkStore(connection, data, storeLength) {
+    const option = { keepNulls: true }; // option to enable null values
+    const bulkLoad = connection.newBulkLoad('bcl.stores', option, (err, rowCont) => {
+        if (err) {
+            throw err;
+        }
+
+        console.log('Stores inserted :', rowCont);
+        console.log('DONE!');
+        connection.close();
+    });
+
+    // setup columns
+    bulkLoad.addColumn('loyverse_id', TYPES.VarChar, { nullable: false });
+    bulkLoad.addColumn('name', TYPES.VarChar, { nullable: true });
+    bulkLoad.addColumn('address', TYPES.VarChar, { nullable: true });
+    bulkLoad.addColumn('phone_number', TYPES.VarChar, { nullable: true });
+    bulkLoad.addColumn('description', TYPES.VarChar, { nullable: true });
+    bulkLoad.addColumn('created_at', TYPES.VarChar, { nullable: true });
+    bulkLoad.addColumn('updated_at', TYPES.VarChar, { nullable: true });
+    bulkLoad.addColumn('deleted_at', TYPES.VarChar, { nullable: true });
+
+    // add rows
+    for (let i = 0;i < storeLength;i++) {
+        if ('id' in data.stores[i]) {
+            data.stores[i].loyverse_id = data.stores[i].id
+            delete data.stores[i].id
+        }
+        bulkLoad.addRow(data.stores[i]);
+    }
+
+    // perform bulk insert
+    connection.execBulkLoad(bulkLoad);
+}
 
 
 function main() {
     console.log('fetching data from', dateCheck)
-    fetchCustomer()
+    // fetchCustomer()
+    fetchStore()
 }
 
 main()
